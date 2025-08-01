@@ -169,96 +169,112 @@ class _TimerScreenState extends State<TimerScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.subItem.subitem),
-        backgroundColor: Colors.deepOrange,
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            const SizedBox(height: 16),
-            Center(
-              child: SizedBox(
-                width: 180,
-                height: 180,
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    ValueListenableBuilder<int>(
-                      valueListenable: _tick,
-                      builder: (context, _, __) {
-                        final total = _totalElapsed();
-                        final percent = (total.inSeconds % 3600) / 3600;
-                        return CustomPaint(
-                          size: const Size(180, 180),
-                          painter: TimerCirclePainter(percent: percent),
-                        );
-                      },
-                    ),
-                    Positioned.fill(
-                      child: Center(
-                        child: ValueListenableBuilder<int>(
-                          valueListenable: _tick,
-                          builder: (context, _, __) => Text(
-                            _formatDuration(_totalElapsed()),
-                            style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              const SizedBox(height: 16),
+              Center(
+                child: SizedBox(
+                  width: 220,
+                  height: 220,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      ValueListenableBuilder<int>(
+                        valueListenable: _tick,
+                        builder: (context, _, __) {
+                          final total = _totalElapsed();
+                          final percent = (total.inSeconds % 60) / 60;
+                          return CustomPaint(
+                            size: const Size(220, 220),
+                            painter: TimerCirclePainter(percent: percent),
+                          );
+                        },
+                      ),
+                      Positioned.fill(
+                        child: Center(
+                          child: ValueListenableBuilder<int>(
+                            valueListenable: _tick,
+                            builder: (context, _, __) {
+                              final d = _totalElapsed();
+                              final min = d.inMinutes.remainder(60).toString().padLeft(2, '0');
+                              final sec = d.inSeconds.remainder(60).toString().padLeft(2, '0');
+                              final ms = (d.inMilliseconds.remainder(1000) ~/ 10).toString().padLeft(2, '0');
+                              return Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  Text(min, style: const TextStyle(fontSize: 38, fontWeight: FontWeight.bold)),
+                                  const SizedBox(width: 4),
+                                  Text(sec, style: const TextStyle(fontSize: 38, fontWeight: FontWeight.bold)),
+                                  const SizedBox(width: 4),
+                                  Text(ms, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w400)),
+                                ],
+                              );
+                            },
                           ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 24),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                ElevatedButton(
-                  onPressed: isRunning ? _pause : _start,
-                  child: Text(isRunning ? 'Pausar' : 'Iniciar'),
-                ),
-                const SizedBox(width: 16),
-                if (!isRunning && timers.isNotEmpty)
-                  ElevatedButton(
-                    onPressed: _resume,
-                    child: const Text('Continuar'),
+              const SizedBox(height: 32),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  IconButton(
+                    icon: Icon(Icons.refresh, color: Colors.grey.shade500, size: 28),
+                    tooltip: 'Resetar',
+                    onPressed: () {
+                      setState(() {
+                        timers.clear();
+                        startTime = null;
+                        isRunning = false;
+                      });
+                    },
                   ),
-                const SizedBox(width: 16),
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.redAccent,
-                    foregroundColor: Colors.white,
+                  const SizedBox(width: 24),
+                  IconButton(
+                    icon: Icon(isRunning ? Icons.pause : Icons.play_arrow, color: Colors.black, size: 32),
+                    tooltip: isRunning ? 'Pausar' : 'Iniciar',
+                    onPressed: isRunning ? _pause : _start,
                   ),
-                  onPressed: _stopAndComplete,
-                  child: const Text('Parar'),
-                ),
-              ],
-            ),
-            const SizedBox(height: 32),
-            const Align(
-              alignment: Alignment.centerLeft,
-              child: Text('Histórico de execuções:', style: TextStyle(fontSize: 18)),
-            ),
-            const SizedBox(height: 8),
-            Expanded(
-              child: ListView.builder(
-                itemCount: timers.length,
-                itemBuilder: (context, idx) {
-                  final t = timers[idx];
-                  return ListTile(
-                    leading: Icon(Icons.timer),
-                    title: Text(
-                      '${t.start.toLocal().toString().substring(0, 19)} - ${t.end.toLocal().toString().substring(0, 19)}',
-                    ),
-                    subtitle: Text('Duração: ${_formatDuration(t.end.difference(t.start))}'),
-                  );
-                },
+                  const SizedBox(width: 24),
+                  IconButton(
+                    icon: Icon(Icons.stop, color: Colors.redAccent, size: 32),
+                    tooltip: 'Parar',
+                    onPressed: _stopAndComplete,
+                  ),
+                ],
               ),
-            ),
-          ],
+              const SizedBox(height: 32),
+              const Align(
+                alignment: Alignment.centerLeft,
+                child: Text('Histórico de execuções:', style: TextStyle(fontSize: 18)),
+              ),
+              const SizedBox(height: 8),
+              Expanded(
+                child: ListView.builder(
+                  itemCount: timers.length,
+                  itemBuilder: (context, idx) {
+                    final t = timers[idx];
+                    return ListTile(
+                      leading: Icon(Icons.timer),
+                      title: Text(
+                        '${t.start.toLocal().toString().substring(0, 19)} - ${t.end.toLocal().toString().substring(0, 19)}',
+                      ),
+                      subtitle: Text('Duração: ${_formatDuration(t.end.difference(t.start))}'),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

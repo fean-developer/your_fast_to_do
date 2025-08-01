@@ -3,6 +3,8 @@ import 'dart:convert';
 // import 'package:flutter/services.dart' show rootBundle;
 import 'dart:io';
 
+import 'package:window_manager/window_manager.dart';
+
 class AdminScreen extends StatefulWidget {
   final VoidCallback onSave;
   const AdminScreen({super.key, required this.onSave});
@@ -69,6 +71,7 @@ class _AdminScreenState extends State<AdminScreen> {
 
   @override
   Widget build(BuildContext context) {
+    windowManager.setTitle("Fast TO DO");
     if (isLoading) return const Center(child: CircularProgressIndicator());
     return Scaffold(
       appBar: AppBar(
@@ -120,9 +123,17 @@ class _AdminScreenState extends State<AdminScreen> {
                         children: [
                           Expanded(
                             child: TextFormField(
-                              initialValue: topic["subItems"][subIndex],
+                              initialValue: topic["subItems"][subIndex] is String
+                                  ? topic["subItems"][subIndex]
+                                  : topic["subItems"][subIndex]["subitem"] ?? '',
                               decoration: InputDecoration(labelText: 'Subitem ${subIndex + 1}'),
-                              onChanged: (v) => topic["subItems"][subIndex] = v,
+                              onChanged: (v) {
+                                if (topic["subItems"][subIndex] is String) {
+                                  topic["subItems"][subIndex] = v;
+                                } else if (topic["subItems"][subIndex] is Map) {
+                                  topic["subItems"][subIndex]["subitem"] = v;
+                                }
+                              },
                             ),
                           ),
                           IconButton(
