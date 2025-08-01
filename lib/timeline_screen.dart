@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
-import 'package:flutter/services.dart' show rootBundle;
 import 'dart:io';
 
 import 'admin_screen.dart';
@@ -16,6 +15,39 @@ class TimelineScreen extends StatefulWidget {
 }
 
 class _TimelineScreenState extends State<TimelineScreen> {
+  Future<void> saveSubItemsCompletedToJson() async {
+    final file = File('lib/timeline_data.json');
+    final String jsonString = await file.readAsString();
+    final List<dynamic> jsonData = json.decode(jsonString);
+
+    for (final item in jsonData) {
+      if (item['subItems'] is List) {
+        for (var i = 0; i < (item['subItems'] as List).length; i++) {
+          final sub = item['subItems'][i];
+          if (sub is Map) {
+            TimelineItem? memItem;
+            try {
+              memItem = timelineItems.firstWhere((t) => t.title == item['title']);
+            } catch (_) {
+              memItem = null;
+            }
+            if (memItem != null) {
+              SubItem? memSub;
+              try {
+                memSub = memItem.subItems.firstWhere((s) => s.subitem == sub['subitem']);
+              } catch (_) {
+                memSub = null;
+              }
+              if (memSub != null) {
+                sub['completed'] = memSub.completed;
+              }
+            }
+          }
+        }
+      }
+    }
+    await file.writeAsString(json.encode(jsonData));
+  }
   late List<TimelineItem> timelineItems = [];
   bool isLoading = true;
 
@@ -35,7 +67,7 @@ class _TimelineScreenState extends State<TimelineScreen> {
         description: item['description'],
         color: Color(int.parse(item['color'])),
         icon: _iconFromString(item['icon']),
-        subItems: List<String>.from(item['subItems']),
+        subItems: TimelineItem.parseSubItems(item['subItems']),
       )).toList();
       isLoading = false;
     });
@@ -99,24 +131,24 @@ class _TimelineScreenState extends State<TimelineScreen> {
                   isLast: index == timelineItems.length - 1,
                   onToggle: () {
                     setState(() {
-                      timelineItems[index].isCompleted = !timelineItems[index].isCompleted;
-                      if (timelineItems[index].isCompleted) {
-                        timelineItems[index].subItemsCompleted = List.filled(timelineItems[index].subItems.length, true);
-                      } else {
-                        timelineItems[index].subItemsCompleted = List.filled(timelineItems[index].subItems.length, false);
+                      final item = timelineItems[index];
+                      item.isCompleted = !item.isCompleted;
+                      for (final sub in item.subItems) {
+                        sub.completed = item.isCompleted;
                       }
                     });
                   },
-                  onSubItemToggle: (subIndex) {
+                  onSubItemToggle: (subIndex) async {
                     setState(() {
                       final item = timelineItems[index];
-                      item.subItemsCompleted[subIndex] = !item.subItemsCompleted[subIndex];
+                      item.subItems[subIndex].completed = !item.subItems[subIndex].completed;
                       item.updateCompletion();
                     });
+                    await saveSubItemsCompletedToJson();
                   },
                 );
-              },
-            ),
-    );
+              }
+            )
+      );
   }
 }
