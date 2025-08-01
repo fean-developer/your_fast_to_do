@@ -10,6 +10,7 @@ class TimelineItemWidget extends StatelessWidget {
   final bool isLast;
   final VoidCallback onToggle;
   final Function(int) onSubItemToggle;
+  final VoidCallback onReload;
 
   const TimelineItemWidget({
     super.key,
@@ -18,6 +19,7 @@ class TimelineItemWidget extends StatelessWidget {
     required this.isLast,
     required this.onToggle,
     required this.onSubItemToggle,
+    required this.onReload,
   });
 
   @override
@@ -125,7 +127,7 @@ class TimelineItemWidget extends StatelessWidget {
                       MaterialPageRoute(
                         builder: (context) => TimerScreen(
                           subItem: item.subItems[subIndex],
-                          onSave: () {},
+                          onSave: onReload,
                         ),
                       ),
                     );

@@ -146,6 +146,7 @@ class _TimelineScreenState extends State<TimelineScreen> {
                     });
                     await saveSubItemsCompletedToJson();
                   },
+                  onReload: loadTimelineData,
                 );
               }
             )

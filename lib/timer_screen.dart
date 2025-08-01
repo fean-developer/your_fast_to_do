@@ -170,6 +170,16 @@ class _TimerScreenState extends State<TimerScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
+      appBar: AppBar(
+        backgroundColor: Colors.grey[100],
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        title: const Text('Fast TO DO', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+        centerTitle: true,
+      ),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
@@ -179,8 +189,8 @@ class _TimerScreenState extends State<TimerScreen> {
               const SizedBox(height: 16),
               Center(
                 child: SizedBox(
-                  width: 220,
-                  height: 220,
+                  width: 270,
+                  height: 270,
                   child: Stack(
                     alignment: Alignment.center,
                     children: [
@@ -190,7 +200,7 @@ class _TimerScreenState extends State<TimerScreen> {
                           final total = _totalElapsed();
                           final percent = (total.inSeconds % 60) / 60;
                           return CustomPaint(
-                            size: const Size(220, 220),
+                            size: const Size(270, 270),
                             painter: TimerCirclePainter(percent: percent),
                           );
                         },
@@ -208,11 +218,11 @@ class _TimerScreenState extends State<TimerScreen> {
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 crossAxisAlignment: CrossAxisAlignment.end,
                                 children: [
-                                  Text(min, style: const TextStyle(fontSize: 38, fontWeight: FontWeight.bold)),
+                                  Text(min, style: const TextStyle(fontSize: 48, fontWeight: FontWeight.bold)),
                                   const SizedBox(width: 4),
-                                  Text(sec, style: const TextStyle(fontSize: 38, fontWeight: FontWeight.bold)),
+                                  Text(sec, style: const TextStyle(fontSize: 48, fontWeight: FontWeight.bold)),
                                   const SizedBox(width: 4),
-                                  Text(ms, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w400)),
+                                  Text(ms, style: const TextStyle(fontSize: 32, fontWeight: FontWeight.w400)),
                                 ],
                               );
                             },
@@ -259,19 +269,31 @@ class _TimerScreenState extends State<TimerScreen> {
               ),
               const SizedBox(height: 8),
               Expanded(
-                child: ListView.builder(
-                  itemCount: timers.length,
-                  itemBuilder: (context, idx) {
-                    final t = timers[idx];
-                    return ListTile(
-                      leading: Icon(Icons.timer),
-                      title: Text(
-                        '${t.start.toLocal().toString().substring(0, 19)} - ${t.end.toLocal().toString().substring(0, 19)}',
+                child: timers.isEmpty
+                    ? const Center(child: Text('Nenhuma execução registrada.', style: TextStyle(color: Colors.grey)))
+                    : ListView.separated(
+                        itemCount: timers.length,
+                        separatorBuilder: (_, __) => Divider(height: 1, color: Colors.grey[300]),
+                        itemBuilder: (context, idx) {
+                          final t = timers[idx];
+                          final duration = t.end.difference(t.start);
+                          return ListTile(
+                            leading: Container(
+                              width: 36,
+                              height: 36,
+                              decoration: BoxDecoration(
+                                color: Colors.blue.withOpacity(0.08),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(Icons.timer, color: Colors.blue, size: 20),
+                            ),
+                            title: Text(
+                              _formatDuration(duration),
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                            ),
+                          );
+                        },
                       ),
-                      subtitle: Text('Duração: ${_formatDuration(t.end.difference(t.start))}'),
-                    );
-                  },
-                ),
               ),
             ],
           ),
