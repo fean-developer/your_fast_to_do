@@ -1,4 +1,8 @@
+import 'timer_screen.dart';
+
+import 'timeline_item.dart';
 import 'package:flutter/material.dart';
+import 'timeline_item.dart';
 
 class TimelineItemWidget extends StatelessWidget {
   final dynamic item;
@@ -97,7 +101,7 @@ class TimelineItemWidget extends StatelessWidget {
                     ),
                   ],
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 12),
                 // Description
                 Text(
                   item.description,
@@ -109,11 +113,23 @@ class TimelineItemWidget extends StatelessWidget {
                 const SizedBox(height: 12),
                 // Sub-items with checkboxes
                 ...List.generate(item.subItems.length, (subIndex) => SubItemWidget(
-                  text: item.subItems[subIndex],
+                  subItem: item.subItems[subIndex],
                   parentCompleted: item.isCompleted,
                   color: item.color,
-                  isCompleted: item.subItemsCompleted[subIndex],
-                  onToggle: () => onSubItemToggle(subIndex),
+                  isCompleted: item.subItems[subIndex].completed,
+                  onToggle: () {
+                    onSubItemToggle(subIndex);
+                  },
+                  onTimer: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => TimerScreen(
+                          subItem: item.subItems[subIndex],
+                          onSave: () {},
+                        ),
+                      ),
+                    );
+                  },
                 )),
               ],
             ),
@@ -125,20 +141,22 @@ class TimelineItemWidget extends StatelessWidget {
 }
 
 class SubItemWidget extends StatelessWidget {
-  final String text;
+  final SubItem subItem;
   final bool parentCompleted;
   final Color color;
   final bool isCompleted;
   final VoidCallback onToggle;
+  final VoidCallback onTimer;
 
-  const SubItemWidget({
-    super.key,
-    required this.text,
+  SubItemWidget({
+    Key? key,
+    required this.subItem,
     required this.parentCompleted,
     required this.color,
     required this.isCompleted,
     required this.onToggle,
-  });
+    required this.onTimer,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -164,14 +182,20 @@ class SubItemWidget extends StatelessWidget {
           const SizedBox(width: 12),
           Expanded(
             child: Text(
-              text,
+              subItem.subitem,
               style: TextStyle(
-                fontSize: 13,
+                fontSize: 12,
                 color: isCompleted ? Colors.grey : Colors.black87,
                 decoration: isCompleted ? TextDecoration.lineThrough : null,
               ),
             ),
           ),
+            IconButton(
+            icon: Icon(Icons.play_arrow, size: 18, color: isCompleted ? Colors.grey : Colors.green),
+            tooltip: 'Iniciar/Ver Timer',
+            onPressed: isCompleted ? null : onTimer,
+            disabledColor: Colors.grey,
+            ),
         ],
       ),
     );
