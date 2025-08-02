@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'dashboard_screen.dart';
+import 'timeline_screen.dart';
+import 'package:path_provider/path_provider.dart';
 import 'timeline_item.dart';
 import 'dart:math' as math;
 import 'dart:io';
@@ -44,6 +47,17 @@ class TimerScreen extends StatefulWidget {
 }
 
 class _TimerScreenState extends State<TimerScreen> {
+  Future<File> _getTimelineFile() async {
+    final dir = await getApplicationDocumentsDirectory();
+    print('📦 Caminho dos documentos: ${dir.path} 📦');
+    final file = File('${dir.path}/timeline_data.json');
+    if (!await file.exists()) {
+      // Copia dos assets se não existir
+      final assetData = await DefaultAssetBundle.of(context).loadString('lib/timeline_data.json');
+      await file.writeAsString(assetData);
+    }
+    return file;
+  }
   bool _disposed = false;
   Future<void> _stopAndComplete() async {
     if (isRunning && startTime != null) {
@@ -55,7 +69,13 @@ class _TimerScreenState extends State<TimerScreen> {
     }
     await _saveTimersToJson(markCompleted: true);
     widget.onSave();
-    if (mounted) Navigator.of(context).pop();
+    if (mounted) {
+      Future.microtask(() {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const TimelineScreen()),
+        );
+      });
+    }
   }
   bool isRunning = false;
   DateTime? startTime;
@@ -115,7 +135,7 @@ class _TimerScreenState extends State<TimerScreen> {
   }
 
   Future<void> _saveTimersToJson({bool markCompleted = false}) async {
-    final file = File('lib/timeline_data.json');
+    final file = await _getTimelineFile();
     final String jsonString = await file.readAsString();
     final List<dynamic> jsonData = json.decode(jsonString);
 
@@ -129,7 +149,10 @@ class _TimerScreenState extends State<TimerScreen> {
               'subitem': widget.subItem.subitem,
               'timers': timers.map((t) => t.toJson()).toList(),
             };
-            if (markCompleted) {
+            // Se todos os checkboxes estiverem desmarcados (timers vazio), completed = false
+            if (timers.isEmpty) {
+              subMap['completed'] = false;
+            } else if (markCompleted) {
               subMap['completed'] = true;
             } else if (sub is Map && sub.containsKey('completed')) {
               subMap['completed'] = sub['completed'];
@@ -169,96 +192,132 @@ class _TimerScreenState extends State<TimerScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        title: Text(widget.subItem.subitem),
-        backgroundColor: Colors.deepOrange,
+        title: const Text('To Do', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        backgroundColor: const Color.fromARGB(255, 250, 121, 0),
+        foregroundColor: const Color.fromARGB(255, 252, 252, 252),
+        automaticallyImplyLeading: false,
+        elevation: 0,
+        centerTitle: true,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            const SizedBox(height: 16),
-            Center(
-              child: SizedBox(
-                width: 180,
-                height: 180,
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    ValueListenableBuilder<int>(
-                      valueListenable: _tick,
-                      builder: (context, _, __) {
-                        final total = _totalElapsed();
-                        final percent = (total.inSeconds % 3600) / 3600;
-                        return CustomPaint(
-                          size: const Size(180, 180),
-                          painter: TimerCirclePainter(percent: percent),
-                        );
-                      },
-                    ),
-                    Positioned.fill(
-                      child: Center(
-                        child: ValueListenableBuilder<int>(
-                          valueListenable: _tick,
-                          builder: (context, _, __) => Text(
-                            _formatDuration(_totalElapsed()),
-                            style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              const SizedBox(height: 16),
+              Center(
+                child: SizedBox(
+                  width: 270,
+                  height: 270,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      ValueListenableBuilder<int>(
+                        valueListenable: _tick,
+                        builder: (context, _, __) {
+                          final total = _totalElapsed();
+                          final percent = (total.inSeconds % 60) / 60;
+                          return CustomPaint(
+                            size: const Size(270, 270),
+                            painter: TimerCirclePainter(percent: percent),
+                          );
+                        },
+                      ),
+                      Positioned.fill(
+                        child: Center(
+                          child: ValueListenableBuilder<int>(
+                            valueListenable: _tick,
+                            builder: (context, _, __) {
+                              final d = _totalElapsed();
+                              final min = d.inMinutes.remainder(60).toString().padLeft(2, '0');
+                              final sec = d.inSeconds.remainder(60).toString().padLeft(2, '0');
+                              final ms = (d.inMilliseconds.remainder(1000) ~/ 10).toString().padLeft(2, '0');
+                              return Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  Text(min, style: const TextStyle(fontSize: 48, fontWeight: FontWeight.bold)),
+                                  const SizedBox(width: 4),
+                                  Text(sec, style: const TextStyle(fontSize: 48, fontWeight: FontWeight.bold)),
+                                  const SizedBox(width: 4),
+                                  Text(ms, style: const TextStyle(fontSize: 32, fontWeight: FontWeight.w400)),
+                                ],
+                              );
+                            },
                           ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 24),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                ElevatedButton(
-                  onPressed: isRunning ? _pause : _start,
-                  child: Text(isRunning ? 'Pausar' : 'Iniciar'),
-                ),
-                const SizedBox(width: 16),
-                if (!isRunning && timers.isNotEmpty)
-                  ElevatedButton(
-                    onPressed: _resume,
-                    child: const Text('Continuar'),
+              const SizedBox(height: 32),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  IconButton(
+                    icon: Icon(Icons.refresh, color: Colors.grey.shade500, size: 28),
+                    tooltip: 'Resetar',
+                    onPressed: () {
+                      setState(() {
+                        timers.clear();
+                        startTime = null;
+                        isRunning = false;
+                      });
+                    },
                   ),
-                const SizedBox(width: 16),
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.redAccent,
-                    foregroundColor: Colors.white,
+                  const SizedBox(width: 24),
+                  IconButton(
+                    icon: Icon(isRunning ? Icons.pause : Icons.play_arrow, color: Colors.black, size: 32),
+                    tooltip: isRunning ? 'Pausar' : 'Iniciar',
+                    onPressed: isRunning ? _pause : _start,
                   ),
-                  onPressed: _stopAndComplete,
-                  child: const Text('Parar'),
-                ),
-              ],
-            ),
-            const SizedBox(height: 32),
-            const Align(
-              alignment: Alignment.centerLeft,
-              child: Text('Histórico de execuções:', style: TextStyle(fontSize: 18)),
-            ),
-            const SizedBox(height: 8),
-            Expanded(
-              child: ListView.builder(
-                itemCount: timers.length,
-                itemBuilder: (context, idx) {
-                  final t = timers[idx];
-                  return ListTile(
-                    leading: Icon(Icons.timer),
-                    title: Text(
-                      '${t.start.toLocal().toString().substring(0, 19)} - ${t.end.toLocal().toString().substring(0, 19)}',
-                    ),
-                    subtitle: Text('Duração: ${_formatDuration(t.end.difference(t.start))}'),
-                  );
-                },
+                  const SizedBox(width: 24),
+                  IconButton(
+                    icon: Icon(Icons.stop, color: Colors.redAccent, size: 32),
+                    tooltip: 'Parar',
+                    onPressed: _stopAndComplete,
+                  ),
+                ],
               ),
-            ),
-          ],
+              const SizedBox(height: 32),
+              const Align(
+                alignment: Alignment.centerLeft,
+                child: Text('Histórico de execuções:', style: TextStyle(fontSize: 18)),
+              ),
+              const SizedBox(height: 8),
+              Expanded(
+                child: timers.isEmpty
+                    ? const Center(child: Text('Nenhuma execução registrada.', style: TextStyle(color: Colors.grey)))
+                    : ListView.separated(
+                        itemCount: timers.length,
+                        separatorBuilder: (_, __) => Divider(height: 1, color: Colors.grey[300]),
+                        itemBuilder: (context, idx) {
+                          final t = timers[idx];
+                          final duration = t.end.difference(t.start);
+                          return ListTile(
+                            leading: Container(
+                              width: 36,
+                              height: 36,
+                              decoration: BoxDecoration(
+                                color: Colors.blue.withOpacity(0.08),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(Icons.timer, color: Colors.blue, size: 20),
+                            ),
+                            title: Text(
+                              _formatDuration(duration),
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                            ),
+                          );
+                        },
+                      ),
+              ),
+            ],
+          ),
         ),
       ),
     );

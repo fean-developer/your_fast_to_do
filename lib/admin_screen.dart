@@ -1,7 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:path_provider/path_provider.dart';
+import 'dart:io';
 import 'dart:convert';
 // import 'package:flutter/services.dart' show rootBundle;
 import 'dart:io';
+
+import 'package:window_manager/window_manager.dart';
+import 'package:your_fast_to_do/dashboard_screen.dart';
+import 'package:your_fast_to_do/timeline_screen.dart';
 
 class AdminScreen extends StatefulWidget {
   final VoidCallback onSave;
@@ -22,8 +28,15 @@ class _AdminScreenState extends State<AdminScreen> {
   }
 
   Future<void> _loadData() async {
-    final file = File('lib/timeline_data.json');
-    final String jsonString = await file.readAsString();
+    final dir = await getApplicationDocumentsDirectory();
+    final file = File('${dir.path}/timeline_data.json');
+    String jsonString;
+    if (await file.exists()) {
+      jsonString = await file.readAsString();
+    } else {
+      // Fallback para asset se não existir
+      jsonString = await DefaultAssetBundle.of(context).loadString('lib/timeline_data.json');
+    }
     setState(() {
       data = json.decode(jsonString);
       isLoading = false;
@@ -31,10 +44,13 @@ class _AdminScreenState extends State<AdminScreen> {
   }
 
   Future<void> _saveData() async {
-    final file = File('lib/timeline_data.json');
+    final dir = await getApplicationDocumentsDirectory();
+    final file = File('${dir.path}/timeline_data.json');
     await file.writeAsString(json.encode(data));
     widget.onSave();
-    if (mounted) Navigator.of(context).pop();
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(builder: (_) => const TimelineScreen()),
+    );
   }
 
   void _addTopic() {
@@ -72,14 +88,25 @@ class _AdminScreenState extends State<AdminScreen> {
     if (isLoading) return const Center(child: CircularProgressIndicator());
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Administração do TO DO'),
-        backgroundColor: const Color.fromARGB(255, 238, 95, 0),
+        title: const Text('Administração', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        backgroundColor: const Color.fromARGB(255, 250, 121, 0),
+        foregroundColor: const Color.fromARGB(255, 252, 252, 252),
+        automaticallyImplyLeading: false,
         actions: [
           IconButton(
             icon: const Icon(Icons.save),
             onPressed: _saveData,
             tooltip: 'Salvar',
           ),
+          IconButton(
+          icon: const Icon(Icons.dashboard, color: Colors.white),
+          tooltip: 'Voltar para Dashboard',
+          onPressed: () {
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(builder: (_) => DashboardScreen()),
+            );
+          },
+        ),
         ],
       ),
       floatingActionButton: FloatingActionButton(
@@ -120,9 +147,17 @@ class _AdminScreenState extends State<AdminScreen> {
                         children: [
                           Expanded(
                             child: TextFormField(
-                              initialValue: topic["subItems"][subIndex],
+                              initialValue: topic["subItems"][subIndex] is String
+                                  ? topic["subItems"][subIndex]
+                                  : topic["subItems"][subIndex]["subitem"] ?? '',
                               decoration: InputDecoration(labelText: 'Subitem ${subIndex + 1}'),
-                              onChanged: (v) => topic["subItems"][subIndex] = v,
+                              onChanged: (v) {
+                                if (topic["subItems"][subIndex] is String) {
+                                  topic["subItems"][subIndex] = v;
+                                } else if (topic["subItems"][subIndex] is Map) {
+                                  topic["subItems"][subIndex]["subitem"] = v;
+                                }
+                              },
                             ),
                           ),
                           IconButton(
