@@ -1,4 +1,5 @@
 import 'timer_screen.dart';
+import 'execution_history_screen.dart';
 
 import 'timeline_item.dart';
 import 'package:flutter/material.dart';
@@ -132,6 +133,13 @@ class TimelineItemWidget extends StatelessWidget {
                       ),
                     );
                   },
+                  onHistory: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => ExecutionHistoryScreen(subItem: item.subItems[subIndex]),
+                      ),
+                    );
+                  },
                 )),
               ],
             ),
@@ -149,6 +157,7 @@ class SubItemWidget extends StatelessWidget {
   final bool isCompleted;
   final VoidCallback onToggle;
   final VoidCallback onTimer;
+  final VoidCallback? onHistory;
 
   SubItemWidget({
     Key? key,
@@ -158,6 +167,7 @@ class SubItemWidget extends StatelessWidget {
     required this.isCompleted,
     required this.onToggle,
     required this.onTimer,
+    this.onHistory,
   }) : super(key: key);
 
   @override
@@ -192,12 +202,17 @@ class SubItemWidget extends StatelessWidget {
               ),
             ),
           ),
-            IconButton(
+          IconButton(
             icon: Icon(Icons.play_arrow, size: 18, color: isCompleted ? Colors.grey : Colors.green),
             tooltip: 'Iniciar/Ver Timer',
             onPressed: isCompleted ? null : onTimer,
             disabledColor: Colors.grey,
-            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.history, size: 18, color: Colors.blue),
+            tooltip: 'Ver histórico',
+            onPressed: onHistory,
+          ),
         ],
       ),
     );

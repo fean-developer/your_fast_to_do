@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'dashboard_screen.dart';
+import 'timeline_screen.dart';
+import 'package:path_provider/path_provider.dart';
 import 'timeline_item.dart';
 import 'dart:math' as math;
 import 'dart:io';
@@ -44,6 +47,17 @@ class TimerScreen extends StatefulWidget {
 }
 
 class _TimerScreenState extends State<TimerScreen> {
+  Future<File> _getTimelineFile() async {
+    final dir = await getApplicationDocumentsDirectory();
+    print('📦 Caminho dos documentos: ${dir.path} 📦');
+    final file = File('${dir.path}/timeline_data.json');
+    if (!await file.exists()) {
+      // Copia dos assets se não existir
+      final assetData = await DefaultAssetBundle.of(context).loadString('lib/timeline_data.json');
+      await file.writeAsString(assetData);
+    }
+    return file;
+  }
   bool _disposed = false;
   Future<void> _stopAndComplete() async {
     if (isRunning && startTime != null) {
@@ -55,7 +69,13 @@ class _TimerScreenState extends State<TimerScreen> {
     }
     await _saveTimersToJson(markCompleted: true);
     widget.onSave();
-    if (mounted) Navigator.of(context).pop();
+    if (mounted) {
+      Future.microtask(() {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const TimelineScreen()),
+        );
+      });
+    }
   }
   bool isRunning = false;
   DateTime? startTime;
@@ -115,7 +135,7 @@ class _TimerScreenState extends State<TimerScreen> {
   }
 
   Future<void> _saveTimersToJson({bool markCompleted = false}) async {
-    final file = File('lib/timeline_data.json');
+    final file = await _getTimelineFile();
     final String jsonString = await file.readAsString();
     final List<dynamic> jsonData = json.decode(jsonString);
 
@@ -129,7 +149,10 @@ class _TimerScreenState extends State<TimerScreen> {
               'subitem': widget.subItem.subitem,
               'timers': timers.map((t) => t.toJson()).toList(),
             };
-            if (markCompleted) {
+            // Se todos os checkboxes estiverem desmarcados (timers vazio), completed = false
+            if (timers.isEmpty) {
+              subMap['completed'] = false;
+            } else if (markCompleted) {
               subMap['completed'] = true;
             } else if (sub is Map && sub.containsKey('completed')) {
               subMap['completed'] = sub['completed'];
@@ -171,13 +194,11 @@ class _TimerScreenState extends State<TimerScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: Colors.grey[100],
+        title: const Text('To Do', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        backgroundColor: const Color.fromARGB(255, 250, 121, 0),
+        foregroundColor: const Color.fromARGB(255, 252, 252, 252),
+        automaticallyImplyLeading: false,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-        title: const Text('Fast TO DO', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
         centerTitle: true,
       ),
       body: SafeArea(
