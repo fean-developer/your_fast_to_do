@@ -6,6 +6,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:window_manager/window_manager.dart';
+import 'package:your_fast_to_do/components/custom_app_bar.dart';
 import 'package:your_fast_to_do/dashboard_screen.dart';
 import 'package:your_fast_to_do/timeline_screen.dart';
 
@@ -87,11 +88,8 @@ class _AdminScreenState extends State<AdminScreen> {
   Widget build(BuildContext context) {
     if (isLoading) return const Center(child: CircularProgressIndicator());
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Administração', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-        backgroundColor: const Color.fromARGB(255, 250, 121, 0),
-        foregroundColor: const Color.fromARGB(255, 252, 252, 252),
-        automaticallyImplyLeading: false,
+      appBar: CustomAppBar(
+        title: 'Administração',
         actions: [
           IconButton(
             icon: const Icon(Icons.save),

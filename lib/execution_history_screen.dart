@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:your_fast_to_do/components/custom_app_bar.dart';
 import 'package:your_fast_to_do/dashboard_screen.dart';
 import 'timeline_item.dart';
 import 'timeline_screen.dart';
@@ -10,6 +11,7 @@ class ExecutionHistoryScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final timers = subItem.timers;
+    final item = subItem;
     // Agrupa execuções por data
     final Map<String, List<TimerEntry>> grouped = {};
     for (final t in timers) {
@@ -17,13 +19,8 @@ class ExecutionHistoryScreen extends StatelessWidget {
       grouped.putIfAbsent(key, () => []).add(t);
     }
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Histórico de Execução', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-        backgroundColor: const Color.fromARGB(255, 243, 121, 6),
-        foregroundColor: const Color.fromARGB(255, 252, 252, 252),
-        
-        elevation: 0,
-        automaticallyImplyLeading: false,
+      appBar: CustomAppBar(
+        title: 'Histórico de Execução - ${item.subitem}',
         actions: [
           IconButton(
             icon: const Icon(Icons.dashboard, color: Colors.white),
@@ -52,6 +49,7 @@ class ExecutionHistoryScreen extends StatelessWidget {
               padding: const EdgeInsets.all(16),
               itemCount: grouped.keys.length,
               itemBuilder: (context, groupIdx) {
+                print('Group index: $groupIdx, Key: ${grouped.keys.elementAt(groupIdx)}');
                 final dateKey = grouped.keys.elementAt(groupIdx);
                 final entries = grouped[dateKey]!;
                 return Column(
@@ -103,6 +101,8 @@ class ExecutionHistoryScreen extends StatelessWidget {
                 );
               },
             ),
+        
+          
     );
   }
 
