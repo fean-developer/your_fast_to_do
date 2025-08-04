@@ -146,6 +146,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Duration avgTimePerTask = Duration.zero;
   bool isLoading = true;
   int completedThisMonth = 0;
+  DateTime? startDate;
+  DateTime? endDate;
 
   @override
   void initState() {
@@ -164,6 +166,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
     int tasksWithTime = 0;
     final now = DateTime.now();
     int completedMonth = 0;
+    List<DateTime> allStarts = [];
+    List<DateTime> allEnds = [];
     for (final topic in data) {
       final subItems = topic['subItems'] as List;
       subItemsCount += subItems.length;
@@ -181,6 +185,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
               if (start != null && end != null) {
                 totalSpent += end.difference(start);
                 tasksWithTime++;
+                allStarts.add(start);
+                allEnds.add(end);
                 if (end.month == now.month && end.year == now.year) {
                   completedMonth++;
                 }
@@ -200,7 +206,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
         notStarted++;
       }
     }
+    allStarts.sort();
+    allEnds.sort();
     setState(() {
+      startDate = allStarts.isNotEmpty ? allStarts.first : null;
+      endDate = allEnds.isNotEmpty ? allEnds.last : null;
       totalTasks = data.length;
       totalSubItems = subItemsCount;
       completedTasks = completed;
@@ -211,6 +221,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
       completedThisMonth = completedMonth;
       isLoading = false;
     });
+  }
+
+  String _formatDate(DateTime? dt) {
+    if (dt == null) return '--';
+    return '${_monthName(dt.month)} ${dt.day < 10 ? '0' : ''}${dt.day} ${dt.year}';
+  }
+
+  String _monthName(int m) {
+    const months = [
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+    ];
+    return months[m - 1];
   }
   @override
   Widget build(BuildContext context) {
@@ -354,21 +377,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                       ),
                                     ),
                                     const SizedBox(height: 12),
+                                   
                                     Row(
                                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                       children: [
                                         Column(
                                           crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: const [
-                                            Text('Start Date', style: TextStyle(fontSize: 13, color: Colors.grey)),
-                                            Text('Mar 20 2023', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                                          children: [
+                                            const Text('Start Date', style: TextStyle(fontSize: 13, color: Colors.grey)),
+                                            Text(_formatDate(startDate), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
                                           ],
                                         ),
                                         Column(
                                           crossAxisAlignment: CrossAxisAlignment.end,
-                                          children: const [
-                                            Text('End Date', style: TextStyle(fontSize: 13, color: Colors.grey)),
-                                            Text('Apr 20 2023', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                                          children: [
+                                            const Text('End Date', style: TextStyle(fontSize: 13, color: Colors.grey)),
+                                            Text(_formatDate(endDate), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
                                           ],
                                         ),
                                       ],
@@ -472,16 +496,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                       children: [
                                         Column(
                                           crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: const [
-                                            Text('Start Date', style: TextStyle(fontSize: 13, color: Colors.grey)),
-                                            Text('Mar 20 2023', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                                          children: [
+                                            const Text('Start Date', style: TextStyle(fontSize: 13, color: Colors.grey)),
+                                            Text(_formatDate(startDate), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
                                           ],
                                         ),
                                         Column(
                                           crossAxisAlignment: CrossAxisAlignment.end,
-                                          children: const [
-                                            Text('End Date', style: TextStyle(fontSize: 13, color: Colors.grey)),
-                                            Text('Apr 20 2023', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                                          children: [
+                                            const Text('End Date', style: TextStyle(fontSize: 13, color: Colors.grey)),
+                                            Text(_formatDate(endDate), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
                                           ],
                                         ),
                                       ],

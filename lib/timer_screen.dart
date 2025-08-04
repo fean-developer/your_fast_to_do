@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:your_fast_to_do/components/custom_app_bar.dart';
 import 'dashboard_screen.dart';
 import 'timeline_screen.dart';
 import 'package:path_provider/path_provider.dart';
@@ -193,13 +194,8 @@ class _TimerScreenState extends State<TimerScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBar(
-        title: const Text('To Do', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-        backgroundColor: const Color.fromARGB(255, 250, 121, 0),
-        foregroundColor: const Color.fromARGB(255, 252, 252, 252),
-        automaticallyImplyLeading: false,
-        elevation: 0,
-        centerTitle: true,
+      appBar: CustomAppBar(
+        title: 'To Do'
       ),
       body: SafeArea(
         child: Padding(
